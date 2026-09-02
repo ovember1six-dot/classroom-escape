@@ -1,4 +1,3 @@
-
 (() => {
   const state = {
     seconds: 30 * 60,
@@ -11,6 +10,8 @@
     hintCount: 3,
     soundOn: true
   };
+
+  const ORDER = ["computer", "locker", "trash", "books", "teacher"];
 
   const problems = {
     computer: {
@@ -42,7 +43,6 @@
       answer: "108",
       rewardIndex: 0,
       reward: "7",
-      requiresKey: true,
       html: `
         <p class="problem-copy">다음 평행사변형의 넓이는 몇 cm²입니까?</p>
         <div class="diagram-card">
@@ -153,6 +153,50 @@
     });
   }
 
+  function unlockedIndex() {
+    for (let i = 0; i < ORDER.length; i++) {
+      if (!state.solved.has(ORDER[i])) return i;
+    }
+    return ORDER.length;
+  }
+
+  function isUnlocked(place) {
+    const idx = ORDER.indexOf(place);
+    if (idx === -1) return false;
+    if (idx === 0) return true;
+    return state.solved.has(ORDER[idx - 1]);
+  }
+
+  function renderLocks() {
+    document.querySelectorAll(".hotspot").forEach(btn => {
+      const place = btn.dataset.place;
+
+      if (place === "door") {
+        const unlocked = state.solved.has("teacher");
+        btn.classList.toggle("locked", !unlocked);
+        btn.innerHTML = unlocked
+          ? `<span>교실 문<br><b>클릭!</b> 🔍</span>`
+          : `<span>교실 문<br><b>잠김</b> 🔒</span>`;
+        return;
+      }
+
+      const locked = !isUnlocked(place);
+      btn.classList.toggle("locked", locked);
+
+      const names = {
+        computer: "컴퓨터",
+        locker: "사물함",
+        trash: "쓰레기통",
+        books: "책장",
+        teacher: "선생님 책상"
+      };
+
+      btn.innerHTML = locked
+        ? `<span>${names[place]}<br><b>잠김</b> 🔒</span>`
+        : `<span>${names[place]}<br><b>클릭!</b> 🔍</span>`;
+    });
+  }
+
   function openModal({ kicker, title, html, needsAnswer = true }) {
     modalKicker.textContent = kicker || "";
     modalTitle.textContent = title;
@@ -179,11 +223,15 @@
     const p = problems[place];
     if (!p) return;
 
-    if (p.requiresKey && !state.hasKey) {
+    if (!isUnlocked(place)) {
+      const idx = ORDER.indexOf(place);
       openModal({
-        kicker: "🗄️ 사물함",
-        title: "잠겨 있다!",
-        html: `<p class="problem-copy">🔒 사물함이 잠겨 있습니다.<br>교실 어딘가에서 <strong>작은 열쇠</strong>를 먼저 찾아야 할 것 같아요.</p>`,
+        kicker: "🔒 잠긴 문제",
+        title: "아직 열리지 않았어요!",
+        html: `<p class="problem-copy">
+          이전 문제를 먼저 해결해야 이 문제를 열 수 있습니다.<br>
+          <strong>문제 ${idx}</strong>을(를) 먼저 풀어 보세요.
+        </p>`,
         needsAnswer: false
       });
       return;
@@ -205,13 +253,15 @@
 
   function openDoor() {
     state.current = "door";
-    const allClues = state.clues.every(Boolean);
 
-    if (!allClues) {
+    if (!state.solved.has("teacher")) {
       openModal({
         kicker: "🚪 교실 문",
-        title: "비밀번호가 필요하다!",
-        html: `<p class="problem-copy">🔐 네 자리 비밀번호를 입력해야 문이 열립니다.<br>아직 단서를 모두 모으지 못했어요.</p>`,
+        title: "문이 잠겨 있어요!",
+        html: `<p class="problem-copy">
+          🔒 아직 마지막 문제를 해결하지 않았습니다.<br>
+          <strong>문제 5</strong>를 먼저 해결하세요.
+        </p>`,
         needsAnswer: false
       });
       return;
@@ -232,15 +282,22 @@
 
   function rewardFor(place) {
     const p = problems[place];
+
     if (p.reward === "key") {
       state.hasKey = true;
       renderInventory();
-      return "정답! 🔑 작은 열쇠를 획득했습니다!";
+      return "정답! 🔑 작은 열쇠를 획득했습니다!<br>문제 2가 열렸어요.";
     }
 
     state.clues[p.rewardIndex] = p.reward;
     renderClues();
-    return `정답! 📜 ${p.rewardIndex + 1}번째 숫자 단서 <strong>${p.reward}</strong>을(를) 획득했습니다!`;
+
+    const idx = ORDER.indexOf(place);
+    const nextText = idx < ORDER.length - 1
+      ? `<br>문제 ${idx + 2}가 열렸어요.`
+      : `<br>모든 문제가 해결되었습니다! 교실 문을 확인하세요.`;
+
+    return `정답! 📜 ${p.rewardIndex + 1}번째 숫자 단서 <strong>${p.reward}</strong>을(를) 획득했습니다!${nextText}`;
   }
 
   answerForm.addEventListener("submit", (e) => {
@@ -273,6 +330,7 @@
       if (!state.solved.has(state.current)) {
         state.solved.add(state.current);
         feedback.innerHTML = rewardFor(state.current);
+        renderLocks();
       } else {
         feedback.textContent = "정답입니다! 이미 이 문제의 보상은 받았어요.";
       }
@@ -310,12 +368,15 @@
     state.hintCount--;
     document.getElementById("hintCount").textContent = state.hintCount;
 
-    let text = "먼저 컴퓨터부터 살펴보세요.";
-    if (state.solved.has("computer") && !state.solved.has("locker")) text = "열쇠를 얻었다면 사물함을 열 수 있어요.";
-    else if (state.solved.has("locker") && !state.solved.has("trash")) text = "쓰레기통 근처를 자세히 살펴보세요.";
-    else if (state.solved.has("trash") && !state.solved.has("books")) text = "책장 속에도 문제가 숨어 있어요.";
-    else if (state.solved.has("books") && !state.solved.has("teacher")) text = "선생님 책상을 확인해 보세요.";
-    else if (state.clues.every(Boolean)) text = "단서 수첩의 숫자를 첫 번째부터 순서대로 문에 입력하세요.";
+    const idx = unlockedIndex();
+    let text = "컴퓨터를 클릭해 문제 1부터 시작하세요.";
+
+    if (idx < ORDER.length) {
+      const labels = ["컴퓨터", "사물함", "쓰레기통", "책장", "선생님 책상"];
+      text = `현재 풀 수 있는 문제는 <strong>문제 ${idx + 1}</strong>입니다. <strong>${labels[idx]}</strong>을(를) 확인해 보세요.`;
+    } else {
+      text = "모든 문제를 풀었어요. 교실 문을 클릭하고 단서 숫자를 순서대로 입력하세요.";
+    }
 
     openModal({
       kicker: "💡 힌트",
@@ -366,7 +427,7 @@
         openModal({
           kicker: "⏰ 시간 종료",
           title: "점심시간이 끝나기 전에 탈출하지 못했어요!",
-          html: `<p class="problem-copy">괜찮아요. 다시 도전해서 더 빠르게 탈출해 보세요!</p>`,
+          html: `<p class="problem-copy">다시 도전해서 더 빠르게 탈출해 보세요!</p>`,
           needsAnswer: false
         });
       }
@@ -376,4 +437,5 @@
   renderTimer();
   renderInventory();
   renderClues();
+  renderLocks();
 })();
