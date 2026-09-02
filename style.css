@@ -459,3 +459,21 @@ button { cursor: pointer; }
   .sidebar { grid-template-columns: 1fr; }
   .answer-row { flex-direction: column; }
 }
+
+
+/* 순차 잠금 표시 */
+.hotspot.locked {
+  border-color: #9aa3aa;
+  color: #d6dadd;
+  background: rgba(18, 24, 29, .83);
+  filter: grayscale(.45);
+  opacity: .92;
+}
+
+.hotspot.locked:hover,
+.hotspot.locked:focus-visible {
+  transform: none;
+  background: rgba(18, 24, 29, .9);
+  outline-color: rgba(190, 197, 202, .35);
+}
+
