@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>점심시간 교실 탈출</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-star">★</span>
+        <div>
+          <h1>점심시간 교실 탈출</h1>
+          <p>문제를 풀고 교실을 탈출하세요!</p>
+        </div>
+        <span class="brand-star">★</span>
+      </div>
+
+      <div class="top-actions">
+        <button class="hud-btn" id="homeBtn" type="button">⌂ <span>메인화면</span></button>
+        <div class="hud-chip">◷ <span id="timer">30:00</span></div>
+        <button class="hud-btn" id="soundBtn" type="button">🔊 <span>BGM</span></button>
+        <button class="hud-btn" id="hintBtn" type="button">💡 <span>힌트</span></button>
+        <button class="hud-btn" id="pauseBtn" type="button">Ⅱ <span>일시정지</span></button>
+      </div>
+    </header>
+
+    <main class="game-shell">
+      <section class="scene-wrap">
+        <div class="scene" id="scene" aria-label="교실 탐색 화면">
+          <img src="assets/classroom-scene.jpg" alt="학생들이 있는 교실" class="scene-image" />
+
+          <button class="hotspot computer" data-place="computer" aria-label="컴퓨터 살펴보기">
+            <span>컴퓨터<br><b>클릭!</b> 🔍</span>
+          </button>
+          <button class="hotspot locker" data-place="locker" aria-label="사물함 살펴보기">
+            <span>사물함<br><b>클릭!</b> 🔍</span>
+          </button>
+          <button class="hotspot trash" data-place="trash" aria-label="쓰레기통 살펴보기">
+            <span>쓰레기통<br><b>클릭!</b> 🔍</span>
+          </button>
+          <button class="hotspot books" data-place="books" aria-label="책장 살펴보기">
+            <span>책장<br><b>클릭!</b> 🔍</span>
+          </button>
+          <button class="hotspot teacher" data-place="teacher" aria-label="선생님 책상 살펴보기">
+            <span>선생님 책상<br><b>클릭!</b> 🔍</span>
+          </button>
+          <button class="hotspot door" data-place="door" aria-label="교실 문 살펴보기">
+            <span>교실 문<br><b>클릭!</b> 🔍</span>
+          </button>
+
+          <div class="guide-card" id="guideCard">
+            <button id="closeGuide" type="button" aria-label="안내 닫기">×</button>
+            <div class="guide-avatar">🧑🏻‍🎓</div>
+            <div>
+              <h3>교실 곳곳을 클릭해 보세요!</h3>
+              <p>문제를 풀면 단서를 얻을 수 있어요.<br>
+              모든 단서를 모아 비밀번호를 완성하면<br>
+              문을 열 수 있습니다!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <section class="paper-panel">
+          <div class="panel-heading">🎒 <div><h2>인벤토리</h2><p>아이템을 모아보세요!</p></div></div>
+          <div class="inventory-grid">
+            <div class="inventory-slot" id="keySlot">🔒</div>
+            <div class="inventory-slot"></div>
+            <div class="inventory-slot"></div>
+            <div class="inventory-slot"></div>
+            <div class="inventory-slot"></div>
+            <div class="inventory-slot"></div>
+          </div>
+        </section>
+
+        <section class="paper-panel clue-panel">
+          <div class="panel-heading">📓 <div><h2>단서 수첩</h2><p>모은 단서를 순서대로 확인하세요!</p></div></div>
+          <ol class="clue-list">
+            <li>첫 번째 숫자: <strong id="clue1">_</strong></li>
+            <li>두 번째 숫자: <strong id="clue2">_</strong></li>
+            <li>세 번째 숫자: <strong id="clue3">_</strong></li>
+            <li>네 번째 숫자: <strong id="clue4">_</strong></li>
+          </ol>
+        </section>
+
+        <button class="side-btn" id="sideHint" type="button">💡 힌트 사용 <span id="hintCount">3</span></button>
+        <button class="side-btn call" id="callBtn" type="button">☎ 직원 호출 <span>2</span></button>
+      </aside>
+    </main>
+
+    <div class="modal-backdrop hidden" id="modalBackdrop">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button class="modal-close" id="modalClose" type="button" aria-label="닫기">×</button>
+        <div class="modal-kicker" id="modalKicker"></div>
+        <h2 id="modalTitle"></h2>
+        <div id="modalBody"></div>
+        <form id="answerForm" class="answer-form">
+          <label for="answerInput">정답</label>
+          <div class="answer-row">
+            <input id="answerInput" inputmode="numeric" autocomplete="off" placeholder="숫자를 입력하세요" />
+            <button type="submit">정답 확인</button>
+          </div>
+        </form>
+        <p id="feedback" class="feedback" aria-live="polite"></p>
+      </section>
+    </div>
+
+    <div class="pause-cover hidden" id="pauseCover">
+      <div>
+        <div class="pause-icon">Ⅱ</div>
+        <h2>게임 일시정지</h2>
+        <p>타이머도 멈췄습니다.</p>
+        <button id="resumeBtn" type="button">계속하기</button>
+      </div>
+    </div>
+
+    <div class="ending hidden" id="ending">
+      <div class="ending-card">
+        <div class="ending-emoji">🍚🎉</div>
+        <h2>교실 탈출 성공!</h2>
+        <p>철컥! 교실 문이 열렸습니다.<br>급식실로 출발하세요!</p>
+        <div class="ending-time">남은 시간 <strong id="endingTime">00:00</strong></div>
+        <button id="restartBtn" type="button">다시 도전하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
