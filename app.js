@@ -406,9 +406,47 @@
   document.getElementById("pauseBtn").addEventListener("click", togglePause);
   document.getElementById("resumeBtn").addEventListener("click", togglePause);
 
-  document.getElementById("soundBtn").addEventListener("click", (e) => {
-    state.soundOn = !state.soundOn;
-    e.currentTarget.innerHTML = `${state.soundOn ? "🔊" : "🔇"} <span>BGM</span>`;
+  // 실제 BGM: 저장소 최상위의 bgm.mp3를 반복 재생합니다.
+  const bgm = new Audio("bgm.mp3");
+  bgm.loop = true;
+  bgm.volume = 0.28;
+  bgm.preload = "auto";
+  state.soundOn = false;
+
+  const soundBtn = document.getElementById("soundBtn");
+
+  function renderSoundButton() {
+    soundBtn.innerHTML = `${state.soundOn ? "🔊" : "🔇"} <span>${state.soundOn ? "BGM ON" : "BGM OFF"}</span>`;
+    soundBtn.setAttribute("aria-pressed", String(state.soundOn));
+  }
+
+  soundBtn.addEventListener("click", async () => {
+    try {
+      if (bgm.paused) {
+        await bgm.play();
+        state.soundOn = true;
+      } else {
+        bgm.pause();
+        state.soundOn = false;
+      }
+      renderSoundButton();
+    } catch (err) {
+      state.soundOn = false;
+      renderSoundButton();
+      openModal({
+        kicker: "🔊 BGM",
+        title: "음악 파일을 찾지 못했어요",
+        html: `<p class="problem-copy">
+          GitHub 저장소 최상위에 <strong>bgm.mp3</strong> 파일이 있는지 확인해 주세요.
+        </p>`,
+        needsAnswer: false
+      });
+    }
+  });
+
+  bgm.addEventListener("error", () => {
+    state.soundOn = false;
+    renderSoundButton();
   });
 
   document.getElementById("homeBtn").addEventListener("click", () => {
@@ -437,5 +475,6 @@
   renderTimer();
   renderInventory();
   renderClues();
+  renderSoundButton();
   renderLocks();
 })();
